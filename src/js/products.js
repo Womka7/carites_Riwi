@@ -1,7 +1,12 @@
-const URL_API = `http://localhost:3000/agriculturalProducts`
-const sectionProducts = document.querySelector(".section-products")
+const URL_API = `http://localhost:3000/agriculturalProducts`;
+const URL_API_FAVORITES = `http://localhost:3000/favorite`;
+const sectionProducts = document.querySelector(".section-products");
+const favCountElement = document.getElementById('fav-count');
+const btnDetails = document.querySelector("#button-card-product");
 
-index(sectionProducts);
+document.addEventListener('DOMContentLoaded', () => {
+    updateFavoritesCount();
+});
 
 async function index(sectionProducts) {
     const response = await fetch(URL_API);
@@ -47,9 +52,45 @@ async function index(sectionProducts) {
             document.querySelector('#ul-contact-owner a[href^="tel:"]').href = `tel:${product.ownerAgricola.ownerPhoneNumber}`;
             document.querySelector('#ul-contact-owner a[href^="https://wa.me/"]').href = `https://wa.me/${product.ownerAgricola.ownerNumberWhatsapp}`;
 
-
             const myModal = new bootstrap.Modal(document.getElementById('product-modal'));
             myModal.show();
+
+            document.getElementById('button-card-product').onclick = function() {
+                addToFavorites(product);
+            };
         });
     });
 }
+
+async function updateFavoritesCount() {
+    const response = await fetch(URL_API_FAVORITES);
+    const favorite = await response.json();
+    favCountElement.innerText = favorite.length;
+}
+
+async function addToFavorites(product) {
+    const response = await fetch(URL_API_FAVORITES);
+    const favorite = await response.json();
+
+    let productExist = false;
+
+    for (let i = 0; i < favorite.length; i++) {
+        if (favorite[i].id === product.id) {
+            productExist = true;
+            alert(`El producto ${favorite[i].productName} ya existe en favoritos`);
+            break;
+        }
+    }
+    if (!productExist) {
+        await fetch(URL_API_FAVORITES, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(product)
+        });
+        updateFavoritesCount(); // Actualizamos el contador después de agregar a favoritos
+    }
+}
+
+index(sectionProducts);
